@@ -1,6 +1,5 @@
 use std::num::NonZeroU32;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use governor::RateLimiter;
@@ -158,11 +157,6 @@ fn cache_key_never_contains_the_api_key() {
     let key = Target::path(&["items", "1"]).cache_key();
     assert!(!key.contains("fdb"), "{key}");
     assert_eq!(upstream.permits.available_permits(), 1);
-}
-
-#[allow(dead_code)]
-fn unused_orderings() -> (Arc<AtomicUsize>, Ordering) {
-    (Arc::new(AtomicUsize::new(0)), Ordering::Relaxed)
 }
 
 #[test]
