@@ -18,6 +18,9 @@ echo "  linter: OK"
 
 # Slot 3: Unit and integration tests
 echo "== 3/6 unit tests =="
+# A version bump without a lock refresh breaks --locked release builds.
+cargo metadata --locked --format-version 1 >/dev/null
+echo "  lockfile: OK"
 if command -v cargo-nextest >/dev/null 2>&1; then
     cargo nextest run --all-features
 else
