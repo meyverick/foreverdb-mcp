@@ -40,7 +40,7 @@ jobs:
             archive: zip
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -49,7 +49,7 @@ jobs:
       - name: Build
         run: cargo build --release --locked --target ${{ matrix.target }}
 
-      - name: Package (unix)
+      - name: Package and verify (unix)
         if: matrix.archive == 'tgz'
         shell: bash
         run: |
@@ -60,6 +60,14 @@ jobs:
           cp "$src" "dist/$name/"
           tar -C dist -czf "dist/$name.tgz" "$name"
           rm -rf "dist/$name"
+
+          # Run the shipped artifact, not just the build output.
+          mkdir -p dist/check
+          tar -C dist/check -xzf "dist/$name.tgz"
+          out="$(dist/check/$name/foreverdb --version)"
+          rm -rf dist/check
+          want="foreverdb ${GITHUB_REF_NAME#v}"
+          [ "$out" = "$want" ] || { echo "got '$out', want '$want'"; exit 1; }
 
       - name: Package (windows)
         if: matrix.archive == 'zip'
@@ -74,7 +82,17 @@ jobs:
           Compress-Archive -Path "dist/$name" -DestinationPath $zip
           Remove-Item -Recurse "dist/$name"
 
-      - uses: actions/upload-artifact@v4
+          # Run the shipped artifact, not just the build output.
+          $check = "dist/check"
+          Expand-Archive -Path $zip -DestinationPath $check
+          $out = & "$check/$name/foreverdb.exe" --version
+          Remove-Item -Recurse $check
+          $tag = $env:GITHUB_REF_NAME -replace "^v", ""
+          if ($out -ne "foreverdb $tag") {
+              throw "got '$out', want 'foreverdb $tag'"
+          }
+
+      - uses: actions/upload-artifact@v5
         with:
           name: foreverdb-${{ matrix.target }}
           path: dist/foreverdb-mcp-*
@@ -85,9 +103,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           path: dist
           merge-multiple: true
@@ -117,7 +135,7 @@ jobs:
     env:
       CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - name: Publish to crates.io
         if: env.CARGO_REGISTRY_TOKEN != ''
