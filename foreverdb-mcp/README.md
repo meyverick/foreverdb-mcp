@@ -8,7 +8,36 @@ The server is a single Rust binary speaking JSON-RPC over stdio. It keeps the AP
 machine, pre-throttles to the key's budget (60 requests a minute), caches answers for at most the
 minute the API allows, and attaches the attribution the API terms require to every data result.
 
-## Run
+## Install
+
+macOS and Linux:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/meyverick/foreverdb-mcp/main/scripts/install.sh | sh
+```
+
+Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/meyverick/foreverdb-mcp/main/scripts/install.ps1 | iex
+```
+
+With a Rust toolchain, using the prebuilt release instead of compiling:
+
+```sh
+cargo binstall foreverdb-mcp
+```
+
+From source:
+
+```sh
+cargo install foreverdb-mcp
+```
+
+The installers verify the release checksum and print the client config using the
+absolute install path, because GUI clients do not inherit your shell `PATH`.
+
+## Run from a checkout
 
 ```sh
 FOREVERDB_API_KEY=fdb_xxxxxxxx_your-key cargo run --release --bin foreverdb

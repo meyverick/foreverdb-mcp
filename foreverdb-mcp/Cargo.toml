@@ -11,14 +11,15 @@ documentation = "https://github.com/meyverick/foreverdb-mcp/tree/main/foreverdb-
 keywords = ["mcp", "model-context-protocol", "warcraft", "foreverdb"]
 categories = ["api-bindings", "command-line-utilities"]
 
-# Prebuilt binary lookup for `cargo binstall foreverdb-mcp`.
+# Prebuilt binary lookup for `cargo binstall foreverdb-mcp`. Asset names carry no
+# version so the same files serve both the versioned tag URL and
+# releases/latest/download used by scripts/install.sh.
 [package.metadata.binstall]
-pkg-url = "{ repo }/releases/download/v{ version }/foreverdb-{ target }-v{ version }.tar.gz"
-bin-dir = "{ bin }{ binary-ext }"
-pkg-fmt = "tgz"
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ target }{ archive-suffix }"
+bin-dir = "{ name }-{ target }/{ bin }{ binary-ext }"
+disabled-strategies = ["quick-install"]
 
-[package.metadata.binstall.overrides.x86_64-pc-windows-msvc]
-pkg-url = "{ repo }/releases/download/v{ version }/foreverdb-{ target }-v{ version }.zip"
+[package.metadata.binstall.overrides.'cfg(windows)']
 pkg-fmt = "zip"
 
 [lints]

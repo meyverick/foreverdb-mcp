@@ -54,6 +54,7 @@ echo "clean clone builds and tests: OK"
 
 # Slot 6: Smoke / runtime test
 echo "== 6/6 smoke / runtime test =="
+./scripts/install_test.sh
 cargo build --release --quiet
 initialize='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"smoke","version":"1"}}}'
 reply="$(printf '%s\n' "$initialize" | FOREVERDB_API_KEY=smoke ./target/release/foreverdb 2>/dev/null | head -n 1)"
