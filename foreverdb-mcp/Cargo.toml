@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://github.com/meyverick/foreverdb-mcp"
 homepage = "https://github.com/meyverick/foreverdb-mcp"
 documentation = "https://github.com/meyverick/foreverdb-mcp/tree/main/foreverdb-mcp#readme"
-keywords = ["mcp", "model-context-protocol", "warcraft", "foreverdb"]
+keywords = ["mcp", "llm", "warcraft", "foreverdb"]
 categories = ["api-bindings", "command-line-utilities"]
 
 # Prebuilt binary lookup for `cargo binstall foreverdb-mcp`. Asset names carry no
