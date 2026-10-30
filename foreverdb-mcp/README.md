@@ -1,3 +1,5 @@
+> *Built to scratch my own itch: architected and directed by me, **implemented by AI**, and published openly in case it proves useful to others.*
+
 # ForeverDB MCP Server
 
 A single, self-contained helper that gives AI assistants live World of Warcraft Forever data —

@@ -1,3 +1,5 @@
+> *Built to scratch my own itch: architected and directed by me, **implemented by AI**, and published openly in case it proves useful to others.*
+
 # ForeverDB Assistant Software
 
 The software that turns a question about World of Warcraft Forever into real game data: one
