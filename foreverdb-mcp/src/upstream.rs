@@ -60,6 +60,14 @@ impl std::fmt::Debug for Config {
     }
 }
 
+/// One answered lookup: the body plus what the cache and the API contributed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Fetched {
+    pub body: String,
+    pub cached: bool,
+    pub upstream_status: Option<u16>,
+}
+
 pub struct Upstream {
     http: reqwest::Client,
     base_url: String,
@@ -88,14 +96,18 @@ impl Upstream {
     }
 
     /// Fetches a target, honoring the API contract for key, budget, and caching.
-    pub async fn get(&self, target: &Target) -> Result<String, UpstreamError> {
+    pub async fn get(&self, target: &Target) -> Result<Fetched, UpstreamError> {
         let Some(api_key) = self.api_key.as_deref() else {
             return Err(UpstreamError::MissingKey);
         };
         let url = target.url(&self.base_url).map_err(UpstreamError::Network)?;
         let cache_key = target.cache_key();
         if let Some(body) = self.cache.get(&cache_key) {
-            return Ok(body);
+            return Ok(Fetched {
+                body,
+                cached: true,
+                upstream_status: None,
+            });
         }
 
         self.limiter.until_ready().await;
@@ -131,7 +143,11 @@ impl Upstream {
 
             if status.is_success() {
                 self.cache.insert(cache_key, body.clone());
-                return Ok(body);
+                return Ok(Fetched {
+                    body,
+                    cached: false,
+                    upstream_status: Some(status.as_u16()),
+                });
             }
             if attempt == 1 && (status == StatusCode::TOO_MANY_REQUESTS || status.is_server_error())
             {

@@ -67,6 +67,14 @@ impl UpstreamError {
         }
     }
 
+    /// HTTP status when the failure carried one, for telemetry.
+    pub fn status_code(&self) -> Option<u16> {
+        match self {
+            UpstreamError::Status(status) => Some(*status),
+            _ => None,
+        }
+    }
+
     pub fn message(&self) -> String {
         match self {
             UpstreamError::MissingKey => {

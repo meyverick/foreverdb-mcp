@@ -26,7 +26,7 @@ fi
 echo "  tests: OK"
 
 # Slot 4: Compile-time asset tracking check
-echo "== 4/6 compile-time inputs are tracked =="
+echo "== 4/6 tracked assets and documentation =="
 untracked_leaks="$(git ls-files --others --exclude-standard | grep -iE '(^|/)(\.env|\.env\..*|.*\.pem|.*\.key|.*\.p12|id_rsa.*)$' || true)"
 if [ -n "$untracked_leaks" ]; then
     echo "$untracked_leaks" | sed 's/^/  X sensitive untracked: /'
@@ -34,6 +34,35 @@ if [ -n "$untracked_leaks" ]; then
     exit 1
 fi
 echo "  asset tracking: OK"
+
+# Documentation topology: spotlight READMEs stay non-technical, wiki tiers exist.
+docs_fail=0
+while IFS= read -r readme; do
+    if grep -qE '^[[:space:]]*```' "$readme"; then
+        echo "  X $readme has fenced code blocks (spotlight must stay non-technical)"
+        docs_fail=1
+    fi
+done < <(git ls-files '*README.md')
+for page in wiki/index.md wiki/01-getting-started.md wiki/02-guides-and-workflows.md \
+    wiki/03-architecture-and-internals.md wiki/04-mastery-and-extension.md; do
+    if [ ! -f "$page" ]; then
+        echo "  X missing wiki page: $page"
+        docs_fail=1
+    fi
+done
+if [ ! -d wiki/adr ] || [ -z "$(ls wiki/adr/*.md 2>/dev/null)" ]; then
+    echo "  X wiki/adr holds no architecture decision records"
+    docs_fail=1
+fi
+if ! grep -q 'okf_version: "0.2"' wiki/index.md 2>/dev/null; then
+    echo "  X wiki/index.md lacks OKF v0.2 frontmatter"
+    docs_fail=1
+fi
+if [ "$docs_fail" -ne 0 ]; then
+    echo "FAIL: documentation topology is incomplete"
+    exit 1
+fi
+echo "  docs topology: OK"
 
 # --- Fast Loop Exit Boundary ---
 if [ "$QUICK" = "--quick" ]; then

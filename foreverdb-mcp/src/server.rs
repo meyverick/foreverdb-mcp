@@ -37,9 +37,35 @@ impl ForeverDb {
         Self::new(Config::from_env())
     }
 
-    async fn run(&self, target: Target) -> Result<CallToolResult, McpError> {
-        Ok(match self.upstream.get(&target).await {
-            Ok(body) => data_result(&body),
+    /// One tool call: fetch, emit the wide event, wrap the result.
+    async fn run(&self, tool: &'static str, target: Target) -> Result<CallToolResult, McpError> {
+        let route = target.cache_key();
+        let started = std::time::Instant::now();
+        let outcome = self.upstream.get(&target).await;
+
+        let status = match &outcome {
+            Ok(_) => "ok".to_owned(),
+            Err(error) => error.code().to_owned(),
+        };
+        let cached = matches!(&outcome, Ok(fetched) if fetched.cached);
+        let upstream_status = match &outcome {
+            Ok(fetched) => fetched.upstream_status,
+            Err(error) => error.status_code(),
+        }
+        .map_or_else(|| "none".to_owned(), |status| status.to_string());
+
+        tracing::info!(
+            tool,
+            route = %route,
+            status = %status,
+            duration_ms = started.elapsed().as_millis() as u64,
+            cached,
+            upstream_status = %upstream_status,
+            "tool call"
+        );
+
+        Ok(match outcome {
+            Ok(fetched) => data_result(&fetched.body),
             Err(error) => error_result(&error),
         })
     }
@@ -62,7 +88,7 @@ impl ForeverDb {
         description = "ForeverDB: the client build, level cap and how many of each thing there are."
     )]
     async fn fdb_meta(&self) -> Result<CallToolResult, McpError> {
-        self.run(Target::path(&["meta"])).await
+        self.run("fdb_meta", Target::path(&["meta"])).await
     }
 
     #[tool(
@@ -72,7 +98,7 @@ impl ForeverDb {
         &self,
         Parameters(params): Parameters<params::Items>,
     ) -> Result<CallToolResult, McpError> {
-        self.run(params.target()).await
+        self.run("fdb_meta", params.target()).await
     }
 
     #[tool(
@@ -82,7 +108,7 @@ impl ForeverDb {
         &self,
         Parameters(params): Parameters<params::Spells>,
     ) -> Result<CallToolResult, McpError> {
-        self.run(params.target()).await
+        self.run("fdb_meta", params.target()).await
     }
 
     #[tool(
@@ -92,7 +118,7 @@ impl ForeverDb {
         &self,
         Parameters(params): Parameters<params::Quests>,
     ) -> Result<CallToolResult, McpError> {
-        self.run(params.target()).await
+        self.run("fdb_meta", params.target()).await
     }
 
     #[tool(
@@ -102,21 +128,22 @@ impl ForeverDb {
         &self,
         Parameters(params): Parameters<params::Vendors>,
     ) -> Result<CallToolResult, McpError> {
-        self.run(params.target()).await
+        self.run("fdb_meta", params.target()).await
     }
 
     #[tool(
         description = "Rogue poisons: how Rogues learn Poisons, every poison with reagents and skill colours, the trainers players saw teach it, and the trainers and poison suppliers with what they sell."
     )]
     async fn fdb_poisons(&self) -> Result<CallToolResult, McpError> {
-        self.run(Target::path(&["poisons"])).await
+        self.run("fdb_poisons", Target::path(&["poisons"])).await
     }
 
     #[tool(
         description = "Disenchanting: what uncommon, rare and epic weapons and armour disenchant into by item level, for Forever (as seen by players) and Classic."
     )]
     async fn fdb_disenchant(&self) -> Result<CallToolResult, McpError> {
-        self.run(Target::path(&["disenchant"])).await
+        self.run("fdb_disenchant", Target::path(&["disenchant"]))
+            .await
     }
 
     #[tool(
@@ -126,7 +153,7 @@ impl ForeverDb {
         &self,
         Parameters(params): Parameters<params::Dungeons>,
     ) -> Result<CallToolResult, McpError> {
-        self.run(params.target()).await
+        self.run("fdb_meta", params.target()).await
     }
 
     #[tool(
@@ -136,7 +163,7 @@ impl ForeverDb {
         &self,
         Parameters(params): Parameters<params::Classes>,
     ) -> Result<CallToolResult, McpError> {
-        self.run(params.target()).await
+        self.run("fdb_meta", params.target()).await
     }
 
     #[tool(
@@ -146,7 +173,7 @@ impl ForeverDb {
         &self,
         Parameters(params): Parameters<params::ItemSets>,
     ) -> Result<CallToolResult, McpError> {
-        self.run(params.target()).await
+        self.run("fdb_meta", params.target()).await
     }
 
     #[tool(
@@ -156,7 +183,7 @@ impl ForeverDb {
         &self,
         Parameters(params): Parameters<params::Professions>,
     ) -> Result<CallToolResult, McpError> {
-        self.run(params.target()).await
+        self.run("fdb_meta", params.target()).await
     }
 
     #[tool(
@@ -166,7 +193,7 @@ impl ForeverDb {
         &self,
         Parameters(params): Parameters<params::Gathering>,
     ) -> Result<CallToolResult, McpError> {
-        self.run(params.target()).await
+        self.run("fdb_meta", params.target()).await
     }
 
     #[tool(
@@ -176,7 +203,7 @@ impl ForeverDb {
         &self,
         Parameters(params): Parameters<params::Battlegrounds>,
     ) -> Result<CallToolResult, McpError> {
-        self.run(params.target()).await
+        self.run("fdb_meta", params.target()).await
     }
 
     #[tool(
@@ -186,7 +213,7 @@ impl ForeverDb {
         &self,
         Parameters(params): Parameters<params::Changes>,
     ) -> Result<CallToolResult, McpError> {
-        self.run(params.target()).await
+        self.run("fdb_meta", params.target()).await
     }
 
     #[tool(
@@ -196,7 +223,7 @@ impl ForeverDb {
         &self,
         Parameters(params): Parameters<params::Content>,
     ) -> Result<CallToolResult, McpError> {
-        self.run(params.target()).await
+        self.run("fdb_meta", params.target()).await
     }
 }
 

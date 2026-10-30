@@ -56,6 +56,7 @@ async fn main() -> ExitCode {
 
     // MCP owns stdout: every log line goes to stderr, and no code logs the key.
     tracing_subscriber::fmt()
+        .json()
         .with_writer(std::io::stderr)
         .with_env_filter(EnvFilter::from_default_env())
         .with_ansi(false)

@@ -1,14 +1,36 @@
-# Codebase Submodule
+# ForeverDB Assistant Software
 
-This directory is the single codebase submodule (Tier 2) containing all application source code, domain packages, and native toolchains.
+The software that turns a question about World of Warcraft Forever into real game data: one
+self-contained helper your AI assistant can call, with no servers to run and no databases to look
+after.
 
-## Execution Context
+## Why It Matters
 
-All build, test, lint, and packaging commands execute with working directory strictly inside this module.
+Game knowledge goes stale. A wiki page is out of date the moment a patch lands, and an AI assistant
+trained on old text will happily invent stats. This software replaces memory with a live lookup, so
+answers reflect the game as it is, and every answer names where it came from.
 
-## Pre-Push Verification
+## Key Capabilities at a Glance
 
-This module must provide `./scripts/check.sh` implementing the native 6-slot verification lane:
-```bash
-./scripts/check.sh [--quick]
-```
+- A single program you install once and point your assistant at.
+- Fifteen kinds of lookup, from a single item to a profession's full recipe list.
+- Answers arrive with the game build they came from, so you can tell how fresh they are.
+- Respectful of the data service: it queues its work, reuses recent answers, and reports limits
+  plainly instead of failing silently.
+- Works on macOS, Linux and Windows, and can be installed from a download, from the Rust package
+  registry, or from source.
+
+## Who Is This For?
+
+- Anyone who wants an AI assistant that knows actual Forever item stats, quest chains and vendor
+  stock.
+- Maintainers who need to ship the helper to other people, and want the install, release and
+  documentation habits to copy.
+
+## Explore the Documentation
+
+Begin with the [curriculum map](wiki/index.md), or take the short path to a working setup in
+[Getting Started](wiki/01-getting-started.md).
+
+The rendered wiki for this software is published at
+https://github.com/meyverick/foreverdb-mcp/wiki

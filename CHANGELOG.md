@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.2 - 2026-10-30
+
+### Added
+- One structured wide event per tool call on stderr: tool, route, status, duration, cache hit and
+  upstream status. stdout stays reserved for the protocol.
+- Progressive four-tier wiki for the orchestrator and for the module, with architecture decision
+  records, tracked in Git and published to the GitHub wiki for public repositories.
+- Spotlight README for every repository; technical guides now live in the wiki.
+- `wow` keyword on the crate.
+
+### Changed
+- Both spotlight READMEs rewritten as non-technical overviews, per the documentation contract.
+- Gate slot 4 now enforces documentation topology: no code blocks in spotlight READMEs, all wiki
+  tiers present with OKF frontmatter, and reference submodules exempted from the gate requirement.
+
 ## 0.1.1 - 2026-10-30
 
 ### Added

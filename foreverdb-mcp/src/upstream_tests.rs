@@ -76,11 +76,13 @@ async fn one_retry_after_429_then_success() {
     .await;
     let upstream = Upstream::new(config(&stub, 6000, 4)).expect("upstream builds");
 
-    let body = upstream
+    let fetched = upstream
         .get(&Target::path(&["meta"]))
         .await
         .expect("retry succeeds");
-    assert_eq!(body, r#"{"data":[1],"meta":{}}"#);
+    assert_eq!(fetched.body, r#"{"data":[1],"meta":{}}"#);
+    assert!(!fetched.cached);
+    assert_eq!(fetched.upstream_status, Some(200));
     assert_eq!(stub.hits(), 2);
 }
 
