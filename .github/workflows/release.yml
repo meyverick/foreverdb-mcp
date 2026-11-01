@@ -1,155 +1,40 @@
 name: release
 
-# Tag push publishes prebuilt binaries, checksums and a crate upload.
-# Asset names carry no version so the same file is reachable from
-# releases/download/v<version>/ and from releases/latest/download/,
-# which scripts/install.sh and cargo binstall both rely on.
+# A tag publishes the package to npm with provenance. The published artifact is
+# source: `bin` points at `src/main.ts`, so `bunx foreverdb-mcp` runs it with no
+# build step and there is no platform matrix and no checksum file.
 
 on:
   push:
     tags: ["v*"]
 
 permissions:
-  contents: write
-
-env:
-  CARGO_TERM_COLOR: always
+  contents: read
+  id-token: write # provenance attestation
 
 jobs:
-  build:
-    name: build ${{ matrix.target }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # Oldest glibc runner keeps the binary usable on old distros.
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-22.04
-            archive: tgz
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-24.04-arm
-            archive: tgz
-          - target: x86_64-apple-darwin
-            os: macos-15-intel
-            archive: tgz
-          - target: aarch64-apple-darwin
-            os: macos-14
-            archive: tgz
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            archive: zip
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - name: Build
-        run: cargo build --release --locked --target ${{ matrix.target }}
-
-      - name: Package and verify (unix)
-        if: matrix.archive == 'tgz'
-        shell: bash
-        run: |
-          set -euo pipefail
-          name="foreverdb-mcp-${{ matrix.target }}"
-          src="target/${{ matrix.target }}/release/foreverdb"
-          mkdir -p "dist/$name"
-          cp "$src" "dist/$name/"
-          tar -C dist -czf "dist/$name.tgz" "$name"
-          rm -rf "dist/$name"
-
-          # Run the shipped artifact, not just the build output.
-          mkdir -p dist/check
-          tar -C dist/check -xzf "dist/$name.tgz"
-          out="$(dist/check/$name/foreverdb --version)"
-          rm -rf dist/check
-          want="foreverdb ${GITHUB_REF_NAME#v}"
-          [ "$out" = "$want" ] || { echo "got '$out', want '$want'"; exit 1; }
-
-      - name: Package (windows)
-        if: matrix.archive == 'zip'
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $name = "foreverdb-mcp-${{ matrix.target }}"
-          $src = "target/${{ matrix.target }}/release/foreverdb.exe"
-          New-Item -ItemType Directory -Path "dist/$name" | Out-Null
-          Copy-Item $src "dist/$name/"
-          $zip = "dist/$name.zip"
-          Compress-Archive -Path "dist/$name" -DestinationPath $zip
-          Remove-Item -Recurse "dist/$name"
-
-          # Run the shipped artifact, not just the build output.
-          $check = "dist/check"
-          Expand-Archive -Path $zip -DestinationPath $check
-          $out = & "$check/$name/foreverdb.exe" --version
-          Remove-Item -Recurse $check
-          $tag = $env:GITHUB_REF_NAME -replace "^v", ""
-          if ($out -ne "foreverdb $tag") {
-              throw "got '$out', want 'foreverdb $tag'"
-          }
-
-      - uses: actions/upload-artifact@v5
-        with:
-          name: foreverdb-${{ matrix.target }}
-          path: dist/foreverdb-mcp-*
-          if-no-files-found: error
-
-  release:
-    name: publish release
-    needs: build
+  publish:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: foreverdb-mcp
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/download-artifact@v5
+      - uses: oven-sh/setup-bun@v2
         with:
-          path: dist
-          merge-multiple: true
+          bun-version: latest
 
-      - name: Checksums
-        shell: bash
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Verify
         run: |
-          set -euo pipefail
-          cd dist
-          sha256sum -- * > SHA256SUMS
-          cat SHA256SUMS
+          bunx biome check .
+          bunx tsc --noEmit
+          bun test
 
-      - name: Create release
+      - name: Publish
+        run: npm publish --provenance --access public
         env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
-        shell: bash
-        run: |
-          gh release create "$TAG" dist/* \
-            --title "$TAG" --generate-notes
-
-  crates-io:
-    name: publish crate
-    needs: release
-    runs-on: ubuntu-latest
-    # Needs a CARGO_REGISTRY_TOKEN repository secret; skipped when absent.
-    env:
-      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Publish to crates.io
-        if: env.CARGO_REGISTRY_TOKEN != ''
-        shell: bash
-        env:
-          REF_NAME: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          version="${REF_NAME#v}"
-          url="https://crates.io/api/v1/crates/foreverdb-mcp/${version}"
-          status="$(curl -sS -o /dev/null -w '%{http_code}' \
-            -H 'User-Agent: foreverdb-release' "$url")"
-          if [ "$status" = "200" ]; then
-            echo "foreverdb-mcp ${version} is already published; skipping"
-            exit 0
-          fi
-          cargo publish --locked
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

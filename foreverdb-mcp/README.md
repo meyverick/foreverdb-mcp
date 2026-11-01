@@ -20,14 +20,14 @@ source, so the ForeverDB community gets credit for maintaining it.
 - Answers carry the game build they came from, so freshness is visible rather than assumed.
 - Polite to the data service: it paces itself to the agreed request budget, reuses recent answers,
   and explains plainly when a limit or missing key gets in the way.
-- Installs on macOS, Linux and Windows without any companion service, database or background
-  process.
+- Installs with one command on macOS, Linux and Windows, without any companion service, database or
+  background process. Bun is the only prerequisite.
 
 ## Who Is This For?
 
 - **Players** who want an AI assistant that knows actual Forever content.
 - **Bot and community-site authors** who need dependable data with clear attribution.
-- **Rust developers** who want a compact, well-tested example of a careful data helper.
+- **TypeScript developers** who want a compact, well-tested example of a careful data helper.
 
 ## Explore the Documentation
 
@@ -39,3 +39,5 @@ The rendered wiki is published at https://github.com/meyverick/foreverdb-mcp/wik
 
 Setup, configuration, the full lookup catalogue and troubleshooting live there rather than here, so
 this page stays readable for everyone.
+
+Support the whole tree at once via [thanks.dev](https://thanks.dev/u/gh/meyverick).

@@ -14,13 +14,13 @@ answers reflect the game as it is, and every answer names where it came from.
 
 ## Key Capabilities at a Glance
 
-- A single program you install once and point your assistant at.
+- One command to install, and your assistant points at it.
 - Fifteen kinds of lookup, from a single item to a profession's full recipe list.
 - Answers arrive with the game build they came from, so you can tell how fresh they are.
 - Respectful of the data service: it queues its work, reuses recent answers, and reports limits
   plainly instead of failing silently.
-- Works on macOS, Linux and Windows, and can be installed from a download, from the Rust package
-  registry, or from source.
+- Works on macOS, Linux and Windows; it is a published package that runs on Bun, so there is no
+download to unpack and no platform-specific build.
 
 ## Who Is This For?
 
@@ -36,3 +36,5 @@ Begin with the [curriculum map](wiki/index.md), or take the short path to a work
 
 The rendered wiki for this software is published at
 https://github.com/meyverick/foreverdb-mcp/wiki
+
+Support the whole tree at once via [thanks.dev](https://thanks.dev/u/gh/meyverick).

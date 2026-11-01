@@ -3,10 +3,10 @@ okf_version: "0.2"
 type: WikiPage
 title: "Module Wiki — Curriculum Map"
 tier: beginner
-generated: { by: "agent/pi", at: 2026-10-30T00:00:00Z }
+generated: { by: "agent/pi", at: 2026-11-01T00:00:00Z }
 sources: [{ id: api-docs, resource: ../../../api-docs.md }]
 status: stable
-stale_after: 2027-10-30
+stale_after: 2027-11-01
 ---
 
 # Module Wiki — Curriculum Map
@@ -19,11 +19,12 @@ question is answered.
 | Beginner | [01-getting-started](01-getting-started.md) | A key, an install, a working assistant in five minutes |
 | Practitioner | [02-guides-and-workflows](02-guides-and-workflows.md) | The full lookup catalogue, paging, languages, error handling |
 | Advanced | [03-architecture-and-internals](03-architecture-and-internals.md) | Request path, cache, pacing, error classification, telemetry |
-| Master | [04-mastery-and-extension](04-mastery-and-extension.md) | Release pipeline, asset naming, adding a lookup, failure matrix |
+| Master | [04-mastery-and-extension](04-mastery-and-extension.md) | Development commands, release pipeline, versioning, adding a lookup, failure matrix |
 
 ## Decisions on Record
 
 - [0001 — Read-only JSON proxy over a typed model](adr/0001-read-only-json-proxy.md)
+- [0002 — Source distribution on Bun instead of a compiled binary](adr/0002-bun-source-distribution.md)
 
 ## The One Thing to Remember
 

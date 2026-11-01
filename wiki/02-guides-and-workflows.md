@@ -3,10 +3,10 @@ okf_version: "0.2"
 type: WikiPage
 title: "Guides and Workflows"
 tier: practitioner
-generated: { by: "agent/pi", at: 2026-10-30T00:00:00Z }
+generated: { by: "agent/pi", at: 2026-11-01T00:00:00Z }
 sources: [{ id: api-docs, resource: ../../../api-docs.md }]
 status: stable
-stale_after: 2027-10-30
+stale_after: 2027-11-01
 ---
 
 # Guides and Workflows
@@ -52,14 +52,15 @@ so an assistant can answer "what do I need to finish first?" rather than only "w
 
 | What you see | What it means | What to do |
 | --- | --- | --- |
-| `missing_api_key` | the environment variable is absent or blank | set the key and restart the assistant |
+| `missing_api_key` | no `--key` argument and no `FOREVERDB_API_KEY` | supply either one and restart the assistant |
 | `bad_key` | the service rejected the key | check it was copied whole and not revoked |
 | `rate_limit` | the minute or daily budget is spent | wait for the stated interval; the program already paced itself |
 | `upstream_unavailable` | the service answered 5xx twice | retry later; this is not a request problem |
 | `timeout` | no answer within the request window | retry; check connectivity |
 
 The program never retries blindly. It retries a rate-limited or server-side failure exactly once, and
-then reports it. That keeps a bad minute from burning the day's budget.
+then reports it. That keeps a bad minute from burning the day's budget. Pacing is strict as well: one
+request at a time at sixty a minute, so a burst cannot spend two minutes' allowance inside one.
 
 ## Budget Maths
 

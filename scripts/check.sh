@@ -5,30 +5,28 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 QUICK="${1:-}"
+PKG="foreverdb-mcp"
 
-# Slot 1: Format verification
-echo "== 1/6 format =="
-cargo fmt --all --check
-echo "  format: OK"
-
-# Slot 2: Strict linting
-echo "== 2/6 linter =="
-cargo clippy --all-targets --all-features -- -D warnings
-echo "  linter: OK"
-
-# Slot 3: Unit and integration tests
-echo "== 3/6 unit tests =="
-# A version bump without a lock refresh breaks --locked release builds.
-cargo metadata --locked --format-version 1 >/dev/null
+# Slot 1: Format, lint and type checking
+echo "== 1/6 format, lint, types =="
+(cd "$PKG" && bun install --frozen-lockfile)
 echo "  lockfile: OK"
-if command -v cargo-nextest >/dev/null 2>&1; then
-    cargo nextest run --all-features
-else
-    cargo test --all-features
-fi
+(cd "$PKG" && bunx biome check .)
+echo "  format + lint: OK"
+(cd "$PKG" && bunx tsc --noEmit)
+echo "  types: OK"
+
+# Slot 2: Unit and integration tests
+echo "== 2/6 tests =="
+(cd "$PKG" && bun test)
 echo "  tests: OK"
 
-# Slot 4: Compile-time asset tracking check
+# Slot 3: Bundle verification
+echo "== 3/6 bundle =="
+(cd "$PKG" && bun build src/main.ts --target=bun --outdir=/tmp/foreverdb-mcp-build >/dev/null)
+echo "  bundle: OK"
+
+# Slot 4: Tracked assets and documentation
 echo "== 4/6 tracked assets and documentation =="
 untracked_leaks="$(git ls-files --others --exclude-standard | grep -iE '(^|/)(\.env|\.env\..*|.*\.pem|.*\.key|.*\.p12|id_rsa.*)$' || true)"
 if [ -n "$untracked_leaks" ]; then
@@ -65,6 +63,7 @@ if [ "$docs_fail" -ne 0 ]; then
     echo "FAIL: documentation topology is incomplete"
     exit 1
 fi
+bun ~/.agents/skills/check/scripts/funding-gate.ts --check . | sed 's/^/  /'
 echo "  docs topology: OK"
 
 # --- Fast Loop Exit Boundary ---
@@ -79,17 +78,18 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 git clone -q . "$tmp/clone"
 (
-    cd "$tmp/clone"
+    cd "$tmp/clone/$PKG"
     [ -f "README.md" ] || { echo "FAIL: README.md missing in clean clone"; exit 1; }
+    bun install --frozen-lockfile >/dev/null
+    bunx tsc --noEmit
+    bun test >/dev/null
 )
-echo "clean clone builds and tests: OK"
+echo "clean clone installs, typechecks and tests: OK"
 
 # Slot 6: Smoke / runtime test
 echo "== 6/6 smoke / runtime test =="
-./scripts/install_test.sh
-cargo build --release --quiet
 initialize='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"smoke","version":"1"}}}'
-reply="$(printf '%s\n' "$initialize" | FOREVERDB_API_KEY=smoke ./target/release/foreverdb 2>/dev/null | head -n 1)"
+reply="$(printf '%s\n' "$initialize" | (cd "$PKG" && FOREVERDB_API_KEY=smoke bun src/main.ts) 2>/dev/null | head -n 1)"
 case "$reply" in
     *'"serverInfo":{"name":"foreverdb"'*) ;;
     *) echo "FAIL: unexpected initialize reply: $reply"; exit 1 ;;
