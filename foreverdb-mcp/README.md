@@ -1,4 +1,4 @@
-> *Built to scratch my own itch: architected and directed by me, **implemented by AI**, and published openly in case it proves useful to others.*
+> *Architected and directed by Human Intelligence, **implemented by AI**.*
 
 # ForeverDB MCP Server
 
@@ -10,8 +10,8 @@ every answer.
 
 An assistant without data guesses. Ask it for an item's stats, a quest's chain or a vendor's stock
 and you get something plausible but invented. This helper replaces the guess with a lookup: the
-assistant asks, the data service answers, and you see real numbers. Each answer also names the
-source, so the ForeverDB community gets credit for maintaining it.
+assistant asks, the data service answers, and you see real numbers. Each answer also carries the
+source credit, [ForeverDB.net](https://foreverdb.net), with a visible link, as the API terms require.
 
 ## Key Capabilities at a Glance
 

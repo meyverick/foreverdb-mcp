@@ -1,4 +1,4 @@
-//! In-memory response cache bounded by the API's documented cacheability.
+// In-memory response cache bounded by the API's documented cacheability.
 
 /** Entries kept before a sweep of expired values runs on insert. */
 export const MAX_ENTRIES = 512;

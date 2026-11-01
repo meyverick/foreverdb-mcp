@@ -1,5 +1,5 @@
-//! Tool descriptions, copied byte-for-byte from the Rust implementation.
-//! Clients and docs quote them; `parity.test.ts` fails if one drifts.
+// Tool descriptions, copied byte-for-byte from the Rust implementation.
+// Clients and docs quote them; `parity.test.ts` fails if one drifts.
 
 export const TOOL_DESCRIPTIONS = {
   fdb_meta: "ForeverDB: the client build, level cap and how many of each thing there are.",

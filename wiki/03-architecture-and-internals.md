@@ -22,8 +22,9 @@ stale_after: 2027-11-01
 | `src/target.ts` | one request as encoded path segments plus query pairs |
 | `src/upstream.ts` | key handling, retries, cache writes, the fetch |
 | `src/limiter.ts` | the pacing token bucket and the concurrency semaphore |
-| `src/cache.ts` | minute-long response cache with a hard entry ceiling |
+| `src/cache.ts` | minute-long response cache, expired entries swept at 512 |
 | `src/errors.ts` | failure classification and the codes tools return |
+| `src/version.ts` | the version, read from the package manifest |
 
 Each file stays under the workspace's cohesion ceiling, so a change lands in exactly one place. The
 published artifact is this source tree: `bin` points at `src/main.ts`, so there is no `dist/` to go

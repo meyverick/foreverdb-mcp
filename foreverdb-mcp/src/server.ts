@@ -1,6 +1,6 @@
-//! MCP tool surface: fifteen named domain tools over one upstream client.
-//! Every tool goes through `run`, so attribution, error shape and the wide
-//! event are identical across the surface.
+// MCP tool surface: fifteen named domain tools over one upstream client.
+// Every tool goes through `run`, so attribution, error shape and the wide
+// event are identical across the surface.
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
@@ -40,7 +40,12 @@ import { VERSION } from "./version.ts";
 export const SERVER_NAME = "foreverdb";
 export const SERVER_INSTRUCTIONS =
   "ForeverDB: WoW Forever game data (items, spells, quests, vendors, professions, gathering, dungeons, classes, item sets, battlegrounds, poisons, disenchanting, changes seen in game, articles). Pass an id, name or slug to a domain tool for one record; omit it to search or list. Every answer carries meta with the game build. Cite ForeverDB.net with a link wherever you show this data.";
-/** Attribution the ForeverDB API terms require wherever its data is shown. */
+/**
+ * Attribution the ForeverDB API terms require wherever its data is shown:
+ * "credit ForeverDB.net as the source, with a visible link to
+ * https://foreverdb.net" (api-docs.md, Credit required). Every answer also
+ * carries the API's own `meta.attribution`, which passes through untouched.
+ */
 export const ATTRIBUTION = "Data from ForeverDB.net <https://foreverdb.net>";
 
 /** One line per tool call, on stderr: stdout belongs to the protocol. */

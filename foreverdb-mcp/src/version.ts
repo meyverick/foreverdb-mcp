@@ -1,4 +1,4 @@
-//! Single source of truth for the version: the package manifest.
+// Single source of truth for the version: the package manifest.
 
 import manifest from "../package.json" with { type: "json" };
 

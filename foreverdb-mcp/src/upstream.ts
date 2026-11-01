@@ -1,5 +1,5 @@
-//! ForeverDB API client: key handling, rate budget, cache, bounded concurrency.
-//! The key is held privately and never appears in a URL, log line or result.
+// ForeverDB API client: key handling, rate budget, cache, bounded concurrency.
+// The key is held privately and never appears in a URL, log line or result.
 
 import { TtlCache } from "./cache.ts";
 import { classify, type UpstreamFailure } from "./errors.ts";

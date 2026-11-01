@@ -1,5 +1,5 @@
-//! Upstream failure classification and the structured codes tools return.
-//! The code strings are contract: clients and docs quote them verbatim.
+// Upstream failure classification and the structured codes tools return.
+// The code strings are contract: clients and docs quote them verbatim.
 
 export type UpstreamFailure =
   | { kind: "missing_key" }

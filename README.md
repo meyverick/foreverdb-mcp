@@ -1,4 +1,4 @@
-> *Built to scratch my own itch: architected and directed by me, **implemented by AI**, and published openly in case it proves useful to others.*
+> *Architected and directed by Human Intelligence, **implemented by AI**.*
 
 # ForeverDB Assistant Software
 
@@ -20,7 +20,10 @@ answers reflect the game as it is, and every answer names where it came from.
 - Respectful of the data service: it queues its work, reuses recent answers, and reports limits
   plainly instead of failing silently.
 - Works on macOS, Linux and Windows; it is a published package that runs on Bun, so there is no
-download to unpack and no platform-specific build.
+  download to unpack and no platform-specific build.
+
+Every answer credits [ForeverDB.net](https://foreverdb.net) with a visible link, as the data source
+requires, and the credit travels with the data rather than depending on the assistant to repeat it.
 
 ## Who Is This For?
 

@@ -1,7 +1,7 @@
-//! Tool parameters and the upstream targets they map to.
-//!
-//! Wire quirks are deliberate: `seen` sends `true`/`false`, `verified` sends
-//! `1`/`0`, `new` stays `new`. "Cleaning them up" changes upstream behavior.
+// Tool parameters and the upstream targets they map to.
+//
+// Wire quirks are deliberate: `seen` sends `true`/`false`, `verified` sends
+// `1`/`0`, `new` stays `new`. "Cleaning them up" changes upstream behavior.
 
 import { z } from "zod";
 

@@ -1,5 +1,5 @@
-//! Flow control: a token bucket that paces requests before they leave, and a
-//! counting semaphore that bounds how many are in flight.
+// Flow control: a token bucket that paces requests before they leave, and a
+// counting semaphore that bounds how many are in flight.
 
 /** Monotonic milliseconds; wall-clock changes must not refill the bucket. */
 const now = (): number => performance.now();
@@ -7,7 +7,11 @@ const now = (): number => performance.now();
 export interface TokenBucketOptions {
   /** Tokens added per millisecond, e.g. 60 per minute is 0.001. */
   refillPerMs: number;
-  /** Tokens held for a burst. Defaults to 1: strictly paced, never over budget. */
+  /**
+   * Tokens held for a burst. Defaults to 1: strictly paced, never over budget.
+   * 0.1.3 used a GCRA burst of 60, which could put ~119 requests in a rolling
+   * minute; the spec's "fewer than 61" wording only holds with a burst of 1.
+   */
   capacity?: number;
   sleep?: (ms: number) => Promise<void>;
   /** Monotonic clock; injectable so pacing can be tested without waiting. */
@@ -69,10 +73,10 @@ export class Semaphore {
       return;
     }
     await new Promise<void>((resolve) => {
-      this.waiting.push(() => {
-        this.available -= 1;
-        resolve();
-      });
+      // `release` hands this waiter the permit it just freed, so the count must
+      // not move here; decrementing leaks one permit per handoff and deadlocks
+      // the queue once the count drifts negative.
+      this.waiting.push(resolve);
     });
   }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
-//! CLI entrypoint: parse argv, resolve the key, start the stdio transport.
-//! MCP owns stdout, so every diagnostic here goes to stderr.
+// CLI entrypoint: parse argv, resolve the key, start the stdio transport.
+// MCP owns stdout, so every diagnostic here goes to stderr.
 
 import { parseArgs } from "node:util";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";

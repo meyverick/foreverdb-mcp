@@ -38,6 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/install.sh`, `scripts/install.ps1`, `scripts/install_test.sh` and the `cargo-binstall`
   metadata. Existing `0.1.x` release assets stay downloadable for clients that pinned them.
 
+### Fixed
+- The concurrency semaphore leaked one permit per queued handoff, so a sustained burst could leave the
+  counter negative and stall every later tool call; permits now transfer to the waiter.
+- Public READMEs carry the required epigraph verbatim, and the wiki describes the cache as a sweep of
+  expired entries at 512 rather than a hard ceiling.
+
 ## 0.1.3 - 2026-10-30
 
 ### Changed

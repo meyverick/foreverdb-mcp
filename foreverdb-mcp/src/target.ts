@@ -1,4 +1,4 @@
-//! One upstream request: encoded path segments plus query pairs.
+// One upstream request: encoded path segments plus query pairs.
 
 export interface Target {
   segments: string[];

@@ -153,6 +153,22 @@ describe("concurrency", () => {
     ).rejects.toThrow("boom");
     await expect(semaphore.use(async () => "next")).resolves.toBe("next");
   });
+
+  test("hands queued permits through without leaking one per handoff", async () => {
+    const semaphore = new Semaphore(1);
+    await semaphore.acquire();
+    const queued = Array.from({ length: 3 }, () => semaphore.acquire());
+    semaphore.release();
+    for (const waiter of queued) {
+      await waiter;
+      semaphore.release();
+    }
+    const next = await Promise.race([
+      semaphore.acquire().then(() => "acquired"),
+      Bun.sleep(200).then(() => "timed out"),
+    ]);
+    expect(next).toBe("acquired");
+  });
 });
 
 describe("cache", () => {
