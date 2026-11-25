@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.0 - 2026-11-25
+
+### Added
+- Six new read-only ForeverDB API tools: `fdb_zones`, `fdb_builds`, `fdb_buffs_nerfs`,
+  `fdb_merchants_favor`, `fdb_bis`, and `fdb_endgame`.
+- `fdb_credit` tool reporting ForeverDB's credit requirement and whether the active key is on the free
+  tier (`meta.attributionRequired`, `X-Api-Plan`, `X-RateLimit-Limit` fallback, lazy `/meta` on cold
+  start).
+- Read-only MCP tool annotations (`readOnlyHint: true`, `destructiveHint: false`, `idempotentHint: true`,
+  `openWorldHint: true`) on all 22 tools.
+- App `User-Agent` header (`foreverdb-mcp/<version>`) on every upstream request to satisfy Cloudflare.
+- Adaptive rate governor starting at `30/min` (free tier) and scaling automatically from the upstream
+  `X-RateLimit-Limit` header (`30`, `60`, or `120` req/min).
+- Explicit HTTP `402` (`subscription_required`) classification without retry, and closed-value schema
+  validation (`limit` 1–100, `quality` 0–5, `fdb_bis`, `fdb_builds`, `fdb_buffs_nerfs` enums).
+
+### Changed
+- **BREAKING** (response format): Removed the prepended plain-text attribution line from tool results;
+  all 21 API-backed tools now return verbatim upstream JSON (containing `meta.attribution` and
+  `meta.attributionRequired`).
+- **BREAKING** (parameters): Removed invalid `limit` and `offset` parameters from `fdb_battlegrounds`.
+- Default upstream base URL switched from `https://foreverdb.net/api/v1` to
+  `https://api.foreverdb.net/api/v1`, and login/key URL updated to `/auth/login?next=%2Fdevelopers`.
+- `lang` parameter is now passed through on all 20 game-data tools.
+- Refreshed tool descriptions for newly documented upstream fields (class talent trees, full spell
+  mechanics, `betaEvent`/`speculation`, vendor `stockLists`, quest `Offered after`, recipe counts).
+- Capped retryable 429 `Retry-After` delays at 10 seconds so daily-limit 429s fail fast.
+- Split Zod schemas into `src/schemas.ts` to keep `src/params.ts` under workspace LOC ceilings.
+
+### Fixed
+- `statusOf()` now retains HTTP status on `{ kind: "api" }` errors so stderr telemetry logs the
+  actual `upstream_status` instead of `"none"`.
+
 ## 0.2.0 - 2026-11-01
 
 ### Added

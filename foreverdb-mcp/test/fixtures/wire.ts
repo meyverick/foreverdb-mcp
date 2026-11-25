@@ -1,6 +1,5 @@
-// Wire snapshot taken from the Rust `Target` builder at crate version 0.1.3.
-// One expected absolute URL per tool and per parameter branch, so a porting
-// mistake shows up as a diff instead of as a wrong request in production.
+// Wire contract snapshot for all 21 API-backed tools against https://api.foreverdb.net/api/v1.
+// One expected absolute URL per tool and per parameter branch.
 
 export interface UrlCase {
   /** Tool name whose arguments produce `url`. */
@@ -9,11 +8,11 @@ export interface UrlCase {
   branch: string;
   /** Arguments exactly as an MCP client would send them. */
   args: Record<string, unknown>;
-  /** Absolute URL the Rust builder produced for those arguments. */
+  /** Absolute URL the target builder produces for those arguments. */
   url: string;
 }
 
-export const BASE_URL = "https://foreverdb.net/api/v1";
+export const BASE_URL = "https://api.foreverdb.net/api/v1";
 
 const BASE = BASE_URL;
 
@@ -56,9 +55,9 @@ export const URL_CASES: UrlCase[] = [
   },
   {
     tool: "fdb_quests",
-    branch: "detail-drops-lang",
+    branch: "detail+lang",
     args: { id: 1, lang: "es" },
-    url: `${BASE}/quests/1`,
+    url: `${BASE}/quests/1?lang=es`,
   },
   {
     tool: "fdb_quests",
@@ -71,10 +70,16 @@ export const URL_CASES: UrlCase[] = [
       side: "alliance",
       limit: 50,
       offset: 50,
+      lang: "fr",
     },
-    url: `${BASE}/quests?q=tough&zone=elwynn&minLevel=1&maxLevel=10&side=alliance&limit=50&offset=50`,
+    url: `${BASE}/quests?q=tough&zone=elwynn&minLevel=1&maxLevel=10&side=alliance&limit=50&offset=50&lang=fr`,
   },
-  { tool: "fdb_vendors", branch: "detail", args: { id: 7 }, url: `${BASE}/vendors/7` },
+  {
+    tool: "fdb_vendors",
+    branch: "detail+lang",
+    args: { id: 7, lang: "de" },
+    url: `${BASE}/vendors/7?lang=de`,
+  },
   {
     tool: "fdb_vendors",
     branch: "list+seen-true",
@@ -87,15 +92,33 @@ export const URL_CASES: UrlCase[] = [
     args: { seen: false },
     url: `${BASE}/vendors?seen=false`,
   },
-  { tool: "fdb_poisons", branch: "only", args: {}, url: `${BASE}/poisons` },
-  { tool: "fdb_disenchant", branch: "only", args: {}, url: `${BASE}/disenchant` },
+  { tool: "fdb_poisons", branch: "default", args: {}, url: `${BASE}/poisons` },
+  { tool: "fdb_poisons", branch: "lang", args: { lang: "es" }, url: `${BASE}/poisons?lang=es` },
+  { tool: "fdb_disenchant", branch: "default", args: {}, url: `${BASE}/disenchant` },
+  {
+    tool: "fdb_disenchant",
+    branch: "lang",
+    args: { lang: "de" },
+    url: `${BASE}/disenchant?lang=de`,
+  },
   {
     tool: "fdb_dungeons",
     branch: "list",
-    args: { limit: 5, offset: 5 },
-    url: `${BASE}/dungeons?limit=5&offset=5`,
+    args: { limit: 5, offset: 5, lang: "fr" },
+    url: `${BASE}/dungeons?limit=5&offset=5&lang=fr`,
   },
-  { tool: "fdb_dungeons", branch: "detail", args: { id: 3 }, url: `${BASE}/dungeons/3` },
+  {
+    tool: "fdb_dungeons",
+    branch: "detail",
+    args: { id: 3, lang: "es" },
+    url: `${BASE}/dungeons/3?lang=es`,
+  },
+  {
+    tool: "fdb_zones",
+    branch: "list",
+    args: { limit: 10, offset: 20, lang: "de" },
+    url: `${BASE}/zones?limit=10&offset=20&lang=de`,
+  },
   {
     tool: "fdb_classes",
     branch: "list+lang",
@@ -122,15 +145,23 @@ export const URL_CASES: UrlCase[] = [
   },
   {
     tool: "fdb_professions",
-    branch: "list-drops-filters",
-    args: { q: "swift", new: true },
-    url: `${BASE}/professions`,
+    branch: "list-drops-filters-keeps-lang",
+    args: { q: "swift", new: true, lang: "es" },
+    url: `${BASE}/professions?lang=es`,
   },
   {
     tool: "fdb_professions",
     branch: "detail",
-    args: { slug: "alchemy", q: "swift", new: true, changed: false, limit: 10, offset: 5 },
-    url: `${BASE}/professions/alchemy?q=swift&new=true&changed=false&limit=10&offset=5`,
+    args: {
+      slug: "alchemy",
+      q: "swift",
+      new: true,
+      changed: false,
+      limit: 10,
+      offset: 5,
+      lang: "de",
+    },
+    url: `${BASE}/professions/alchemy?q=swift&new=true&changed=false&limit=10&offset=5&lang=de`,
   },
   {
     tool: "fdb_gathering",
@@ -140,21 +171,22 @@ export const URL_CASES: UrlCase[] = [
   },
   {
     tool: "fdb_gathering",
-    branch: "slug+zone",
-    args: { slug: "skinning", zone: "duskwood" },
-    url: `${BASE}/gathering/skinning?zone=duskwood`,
+    branch: "slug+zone+lang",
+    args: { slug: "skinning", zone: "duskwood", lang: "fr" },
+    url: `${BASE}/gathering/skinning?zone=duskwood&lang=fr`,
   },
+  { tool: "fdb_battlegrounds", branch: "default", args: {}, url: `${BASE}/battlegrounds` },
   {
     tool: "fdb_battlegrounds",
-    branch: "list",
-    args: { limit: 5, offset: 5 },
-    url: `${BASE}/battlegrounds?limit=5&offset=5`,
+    branch: "lang",
+    args: { lang: "es-MX" },
+    url: `${BASE}/battlegrounds?lang=es-MX`,
   },
   {
     tool: "fdb_changes",
     branch: "list+verified-true",
-    args: { kind: "item", verified: true, limit: 5, offset: 0 },
-    url: `${BASE}/changes-seen?kind=item&verified=1&limit=5&offset=0`,
+    args: { kind: "item", verified: true, limit: 5, offset: 0, lang: "es" },
+    url: `${BASE}/changes-seen?kind=item&verified=1&limit=5&offset=0&lang=es`,
   },
   {
     tool: "fdb_changes",
@@ -162,6 +194,69 @@ export const URL_CASES: UrlCase[] = [
     args: { verified: false },
     url: `${BASE}/changes-seen?verified=0`,
   },
+  {
+    tool: "fdb_builds",
+    branch: "list",
+    args: { limit: 10, offset: 0, lang: "es" },
+    url: `${BASE}/builds?limit=10&offset=0&lang=es`,
+  },
+  {
+    tool: "fdb_builds",
+    branch: "detail-latest",
+    args: {
+      build: "latest",
+      type: "talent",
+      class: "warrior",
+      change: "changed",
+      q: "slam",
+      limit: 25,
+      offset: 0,
+      lang: "de",
+    },
+    url: `${BASE}/builds/latest?type=talent&class=warrior&change=changed&q=slam&limit=25&offset=0&lang=de`,
+  },
+  {
+    tool: "fdb_buffs_nerfs",
+    branch: "filtered",
+    args: {
+      class: "warrior",
+      build: "1.60.1.70790",
+      direction: "buff",
+      limit: 20,
+      offset: 0,
+      lang: "fr",
+    },
+    url: `${BASE}/buffs-nerfs?class=warrior&build=1.60.1.70790&direction=buff&limit=20&offset=0&lang=fr`,
+  },
+  { tool: "fdb_merchants_favor", branch: "default", args: {}, url: `${BASE}/merchants-favor` },
+  {
+    tool: "fdb_merchants_favor",
+    branch: "lang",
+    args: { lang: "es" },
+    url: `${BASE}/merchants-favor?lang=es`,
+  },
+  { tool: "fdb_bis", branch: "list", args: { lang: "es" }, url: `${BASE}/bis?lang=es` },
+  {
+    tool: "fdb_bis",
+    branch: "detail+easy-true",
+    args: {
+      spec: "hunter-beast-mastery",
+      mode: "pvp",
+      level: 60,
+      easy: true,
+      side: "a",
+      lang: "de",
+    },
+    url: `${BASE}/bis/hunter-beast-mastery?mode=pvp&level=60&easy=1&side=a&lang=de`,
+  },
+  {
+    tool: "fdb_bis",
+    branch: "detail+easy-false-omitted",
+    args: { spec: "mage-fire", easy: false },
+    url: `${BASE}/bis/mage-fire`,
+  },
+  { tool: "fdb_endgame", branch: "default", args: {}, url: `${BASE}/endgame` },
+  { tool: "fdb_endgame", branch: "lang", args: { lang: "fr" }, url: `${BASE}/endgame?lang=fr` },
   {
     tool: "fdb_content",
     branch: "detail+lang",
@@ -171,8 +266,8 @@ export const URL_CASES: UrlCase[] = [
   {
     tool: "fdb_content",
     branch: "list+posts",
-    args: { kind: "posts", limit: 5, offset: 5 },
-    url: `${BASE}/posts?limit=5&offset=5`,
+    args: { kind: "posts", limit: 5, offset: 5, lang: "es" },
+    url: `${BASE}/posts?limit=5&offset=5&lang=es`,
   },
   {
     tool: "fdb_content",
@@ -207,5 +302,17 @@ export const ENCODING_CASES: UrlCase[] = [
     branch: "detail-path-encoding",
     args: { slug: "a?b=c" },
     url: `${BASE}/articles/a%3Fb%3Dc`,
+  },
+  {
+    tool: "fdb_bis",
+    branch: "spec-path-encoding",
+    args: { spec: "../admin" },
+    url: `${BASE}/bis/..%2Fadmin`,
+  },
+  {
+    tool: "fdb_builds",
+    branch: "build-path-encoding",
+    args: { build: "1.60/bad" },
+    url: `${BASE}/builds/1.60%2Fbad`,
   },
 ];

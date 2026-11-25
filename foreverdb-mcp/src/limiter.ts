@@ -30,7 +30,7 @@ const realSleep = (ms: number): Promise<void> =>
 export class TokenBucket {
   private tokens: number;
   private last: number;
-  private readonly refillPerMs: number;
+  private refillPerMs: number;
   private readonly capacity: number;
   private readonly sleep: (ms: number) => Promise<void>;
   private readonly clock: () => number;
@@ -42,6 +42,15 @@ export class TokenBucket {
     this.clock = options.now ?? now;
     this.last = this.clock();
     this.sleep = options.sleep ?? realSleep;
+  }
+
+  /** Refills elapsed tokens at the prior rate, then updates the refill rate. */
+  setRate(refillPerMs: number): void {
+    if (!Number.isFinite(refillPerMs) || refillPerMs <= 0) return;
+    const current = this.clock();
+    this.tokens = Math.min(this.capacity, this.tokens + (current - this.last) * this.refillPerMs);
+    this.last = current;
+    this.refillPerMs = refillPerMs;
   }
 
   async take(): Promise<void> {

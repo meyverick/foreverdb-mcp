@@ -6,7 +6,7 @@ export type UpstreamFailure =
   | { kind: "timeout" }
   | { kind: "network"; detail: string }
   | { kind: "response"; status: number }
-  | { kind: "api"; code: string; message: string };
+  | { kind: "api"; status: number; code: string; message: string };
 
 /** Parses the API's `{"error": {"code", "message"}}` document. */
 export function apiError(body: string): { code: string; message: string } | null {
@@ -35,10 +35,19 @@ export function classify(
 ): UpstreamFailure {
   if (status >= 500) return { kind: "response", status };
   const documented = apiError(body);
-  if (documented) return { kind: "api", ...documented };
+  if (documented) return { kind: "api", status, ...documented };
+  if (status === 402) {
+    return {
+      kind: "api",
+      status,
+      code: "subscription_required",
+      message: "The ForeverDB API requires a paid plan for higher request limits.",
+    };
+  }
   if (status === 429) {
     return {
       kind: "api",
+      status,
       code: "rate_limit",
       message:
         retryAfter === undefined
@@ -66,7 +75,8 @@ export function codeOf(failure: UpstreamFailure): string {
 
 /** HTTP status when the failure carried one, for telemetry. */
 export function statusOf(failure: UpstreamFailure): number | undefined {
-  return failure.kind === "response" ? failure.status : undefined;
+  if (failure.kind === "response" || failure.kind === "api") return failure.status;
+  return undefined;
 }
 
 export function messageOf(failure: UpstreamFailure): string {

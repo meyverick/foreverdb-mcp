@@ -14,7 +14,7 @@ stale_after: 2027-11-01
 ## 1. Get a Data Key
 
 The data service requires a personal key. Log in with Battle.net and request developer access at
-https://foreverdb.net/join?next=%2Fdevelopers. Keys look like `fdb_` followed by an account prefix and
+https://foreverdb.net/auth/login?next=%2Fdevelopers. Keys look like `fdb_` followed by an account prefix and
 a secret; treat yours like a password, because anyone who has it can spend your request budget.
 
 ## 2. Install the Program
@@ -71,15 +71,16 @@ bunx foreverdb-mcp --version
 ```
 
 Then restart your assistant and ask something only real data can answer: "what does item 19019 do, and
-what can it disenchant into?" A working setup answers with stats and a credit line naming
-ForeverDB.net. A broken setup says the key is missing — which is the program telling you exactly what
-it needs, and naming both ways to give it.
+what can it disenchant into?" A working setup answers with stats and build metadata. A broken setup says
+the key is missing — which is the program telling you exactly what it needs, and naming both ways to
+give it.
 
-## 5. Keep the Credit Visible
+## 5. Credit on the Free Tier
 
-Every successful result begins with the credit line. If your own tooling strips it before showing the
-data, put it back. The service revokes keys that are used without credit, and that revocation affects
-you, not the program.
+On the free tier, you must credit ForeverDB.net as the source with a visible link to
+`https://foreverdb.net` wherever you show the data (on paid plans it is optional). Every response
+carries `meta.attribution` and `meta.attributionRequired`, and the `fdb_credit` tool reports the policy
+and your active key's tier.
 
 ## Where to Go Next
 

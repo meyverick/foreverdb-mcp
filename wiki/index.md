@@ -11,8 +11,8 @@ stale_after: 2027-11-01
 
 # Module Wiki — Curriculum Map
 
-The software is one program with fifteen ways to ask for data. Work down the tiers and stop when your
-question is answered.
+The software is one program with twenty-two ways to ask for data. Work down the tiers and stop when
+your question is answered.
 
 | Tier | Page | What you get |
 | --- | --- | --- |
@@ -28,9 +28,9 @@ question is answered.
 
 ## The One Thing to Remember
 
-Every answer must credit ForeverDB.net with a visible link to https://foreverdb.net. The data service
-revokes keys used without credit. The program attaches the credit line to every successful result so
-you do not have to remember it — but the credit has to stay visible wherever the data ends up.
+On the free tier, you must credit ForeverDB.net with a visible link to https://foreverdb.net wherever
+you show the data (on paid plans credit is optional). Every API response carries `meta.attribution` and
+`meta.attributionRequired`, and the `fdb_credit` tool reports the policy and your key's tier.
 
 ## What This Program Is Not
 

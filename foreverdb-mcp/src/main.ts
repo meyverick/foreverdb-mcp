@@ -21,7 +21,7 @@ Usage:
 
 Environment:
   FOREVERDB_API_KEY    ForeverDB API key. Ask for one at
-                       https://foreverdb.net/join?next=%2Fdevelopers
+                       https://foreverdb.net/auth/login?next=%2Fdevelopers
   FOREVERDB_BASE_URL   API root; for tests only
 
 --key wins over FOREVERDB_API_KEY when both are set. The environment is the
@@ -38,8 +38,8 @@ Point your MCP client at the package runner:
     }
   }
 
-Credit ForeverDB.net with a link to https://foreverdb.net wherever you show
-its data; the API revokes keys used without credit.
+On the free tier, credit ForeverDB.net with a visible link to
+https://foreverdb.net wherever you show its data (see fdb_credit).
 `;
 
 interface Options {

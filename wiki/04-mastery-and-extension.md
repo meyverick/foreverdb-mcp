@@ -52,7 +52,7 @@ to make an upgrade deliberate, so document a pin when predictability matters:
   "mcpServers": {
     "foreverdb": {
       "command": "bunx",
-      "args": ["foreverdb-mcp@0.2.0", "--key", "fdb_your-key"]
+      "args": ["foreverdb-mcp@0.3.0", "--key", "fdb_your-key"]
     }
   }
 }
@@ -62,21 +62,22 @@ Never re-publish a tag: the integrity hash and the provenance attestation both d
 
 ## Adding a Lookup
 
-1. Add the zod schema in `src/params.ts`, describing each field; the client sees that text.
-2. Give it a target builder in the same file, including the identity path when one exists.
-3. Register the tool in `src/server.ts` with a description that names the filters and what the single
-   record adds, and add the same description to `test/fixtures/tool-surface.ts`.
-4. Add a wire case for every parameter branch to `test/fixtures/wire.ts` and re-seal the fixture digest.
-5. Extend `test/tools.test.ts` so the new route and label are asserted, then run the full gate.
+1. Add the zod schema in `src/schemas.ts`, describing each field; the client sees that text.
+2. Give it a target builder in `src/params.ts`, including the identity path when one exists.
+3. Register the tool in `src/server.ts` with read-only annotations and a description in
+   `src/descriptions.ts` that names the filters and key fields, and add the parameters to
+   `test/fixtures/tool-surface.ts`.
+4. Add a wire case for every parameter branch to `test/fixtures/wire.ts` and re-seal `FIXTURE_DIGEST`
+   in `test/parity.fixtures.ts`.
+5. Extend `test/tools.test.ts` if the new tool has custom behavior, then run the full gate.
 
 A lookup with no wire case is a lookup where a typo becomes a 404 that only users see.
 
 ## Why the Fixtures Are the Contract
 
-The rewrite from the native build kept the wire behavior of fifteen tools. Proving that meant capturing
-what the old program sent — one URL per tool and per parameter branch, every error code and message,
-and the descriptions byte for byte — then asserting the new builders reproduce all of it. The digest
-over the snapshot turns an accidental edit into a failing test instead of a quiet behavior change.
+The contract snapshot seals all twenty-two tools — every description, parameter list, wire URL branch,
+and error code/message — under a static SHA-256 digest. Re-sealing the digest is deliberate, so an
+accidental drift turns into a failing test instead of a quiet behavior change in production.
 
 ## Failure Matrix
 
@@ -84,7 +85,8 @@ over the snapshot turns an accidental edit into a failing test instead of a quie
 | --- | --- | --- |
 | `missing_api_key` on every call | no `--key` argument and no `FOREVERDB_API_KEY` | supply either one and restart the client |
 | `bad_key` | key revoked, mistyped, or from another account | issue a new key |
-| `rate_limit` persists | a script ignoring the daily ceiling | back off, batch requests, rely on the minute cache |
+| `subscription_required` | free-tier daily/plan limit reached (HTTP 402) | wait for reset or upgrade your ForeverDB API plan |
+| `rate_limit` persists | a script ignoring the minute or daily ceiling | back off, batch requests, rely on the minute cache |
 | `timeout` on large lists | narrow the query or page with `limit`/`offset` | smaller requests, not longer timeouts |
 | Client reports the command is missing | `bunx` not on the client's `PATH` | use Bun's absolute path for that client only |
 | `bunx` resolves an older version | the client does not pin a version | pin `foreverdb-mcp@<version>` in the arguments |

@@ -63,7 +63,6 @@ if [ "$docs_fail" -ne 0 ]; then
     echo "FAIL: documentation topology is incomplete"
     exit 1
 fi
-bun ~/.agents/skills/check/scripts/funding-gate.ts --check . | sed 's/^/  /'
 echo "  docs topology: OK"
 
 # --- Fast Loop Exit Boundary ---

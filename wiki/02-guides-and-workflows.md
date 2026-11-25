@@ -14,8 +14,8 @@ stale_after: 2027-11-01
 ## The Lookup Catalogue
 
 Each lookup does two jobs: give it an identity and it returns one record; leave the identity out and it
-searches. Paging parameters are `limit` (1–100) and `offset`, and `lang` (Spanish, Latin-American
-Spanish, German, French) works wherever the game itself has translated names.
+searches. Paging parameters are `limit` (1–100) and `offset`, and `lang` (`en`, `es`, `es-MX`, `de`,
+`fr`) works across all twenty game-data lookups wherever the game itself has translated names.
 
 | Lookup | Identity | Narrows the list |
 | --- | --- | --- |
@@ -25,15 +25,22 @@ Spanish, German, French) works wherever the game itself has translated names.
 | `fdb_quests` | `id` | `q`, `zone`, `minLevel`, `maxLevel`, `side` |
 | `fdb_vendors` | `id` | `q`, `zone`, `seen` |
 | `fdb_dungeons` | `id` | — |
+| `fdb_zones` | — | — |
 | `fdb_classes` | `name` | — |
 | `fdb_itemsets` | `id` | `q` |
 | `fdb_professions` | `slug` | `q`, `new`, `changed` |
 | `fdb_gathering` | `slug` (required) | `zone` |
-| `fdb_battlegrounds` | — | — |
+| `fdb_battlegrounds` | — | — (unpaginated) |
 | `fdb_changes` | — | `kind`, `verified` |
+| `fdb_builds` | `build` (`latest` or version) | `type`, `class`, `change`, `q` (detail) |
+| `fdb_buffs_nerfs` | — | `class`, `build`, `direction` |
+| `fdb_merchants_favor` | — | — |
+| `fdb_bis` | `spec` | `mode`, `level`, `easy`, `side` (detail) |
+| `fdb_endgame` | — | — |
 | `fdb_content` | `slug` | `kind` (`news`, `guide`, … or `posts`) |
 | `fdb_poisons` | — | — |
 | `fdb_disenchant` | — | — |
+| `fdb_credit` | — | — |
 
 ## Three Recipes Worth Knowing
 
@@ -54,20 +61,20 @@ so an assistant can answer "what do I need to finish first?" rather than only "w
 | --- | --- | --- |
 | `missing_api_key` | no `--key` argument and no `FOREVERDB_API_KEY` | supply either one and restart the assistant |
 | `bad_key` | the service rejected the key | check it was copied whole and not revoked |
-| `rate_limit` | the minute or daily budget is spent | wait for the stated interval; the program already paced itself |
+| `subscription_required` | free-tier daily/plan limit reached (HTTP 402) | wait for the daily reset or upgrade your ForeverDB API plan |
+| `rate_limit` | the minute or daily budget is spent | wait for the stated interval; the program already adapted to your plan |
 | `upstream_unavailable` | the service answered 5xx twice | retry later; this is not a request problem |
 | `timeout` | no answer within the request window | retry; check connectivity |
 
-The program never retries blindly. It retries a rate-limited or server-side failure exactly once, and
-then reports it. That keeps a bad minute from burning the day's budget. Pacing is strict as well: one
-request at a time at sixty a minute, so a burst cannot spend two minutes' allowance inside one.
+The program never retries blindly. It retries a server-side `5xx` failure once, retries a `429` once
+only when `Retry-After` is at most 10 seconds (failing fast on daily limits), and never retries `402`.
 
 ## Budget Maths
 
-The service allows 60 requests a minute and 10,000 a day per key. The program paces itself under that
-ceiling and caches every answer for a minute, keyed by request. A conversation that circles back to the
-same item therefore costs one request, not one per mention. If you script bulk lookups, batch them and
-expect the daily ceiling to be the real limit.
+ForeverDB accounts allow 5,000 requests/day and 30/min on the free tier, 10,000/day and 60/min on
+the standard paid plan, and 50,000/day and 120/min on Plus. The program starts conservatively at 30/min,
+adapts automatically from `X-RateLimit-Limit` on the first response, and caches every answer for a
+minute, keyed by request.
 
 ## Language Behaviour
 

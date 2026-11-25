@@ -73,6 +73,20 @@ export const ERROR_CASES: ErrorCase[] = [
   },
   {
     kind: "response",
+    status: 402,
+    body: '{"error":{"code":"subscription_required","message":"Free tier daily limit reached."}}',
+    code: "subscription_required",
+    message: "Free tier daily limit reached.",
+  },
+  {
+    kind: "response",
+    status: 402,
+    body: "payment required",
+    code: "subscription_required",
+    message: "The ForeverDB API requires a paid plan for higher request limits.",
+  },
+  {
+    kind: "response",
     status: 404,
     body: "not found",
     code: "upstream_error",

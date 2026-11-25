@@ -10,16 +10,22 @@ every answer.
 
 An assistant without data guesses. Ask it for an item's stats, a quest's chain or a vendor's stock
 and you get something plausible but invented. This helper replaces the guess with a lookup: the
-assistant asks, the data service answers, and you see real numbers. Each answer also carries the
-source credit, [ForeverDB.net](https://foreverdb.net), with a visible link, as the API terms require.
+assistant asks, the data service answers, and you see real numbers. Each answer returns verbatim
+JSON with the build and attribution metadata, and a dedicated `fdb_credit` lookup checks whether
+your key is on the free tier where [ForeverDB.net](https://foreverdb.net) credit is required.
 
 ## Key Capabilities at a Glance
 
-- Fifteen focused lookups, each able to browse a list or fetch one record.
-- Search in your language: English names stay alongside Spanish, German and French ones.
+- Twenty-two read-only lookups covering items, spells, quests, vendors, dungeons, zones, classes and
+  talents, item sets, professions, gathering, battlegrounds, poisons, disenchanting, changes seen in
+  game, build diffs, buffs/nerfs, Merchant's Favor, best in slot, endgame progress, articles/posts,
+  and credit status.
+- Search in your language: English names stay alongside Spanish, Latin-American Spanish, German and
+  French ones across every game-data lookup.
 - Answers carry the game build they came from, so freshness is visible rather than assumed.
-- Polite to the data service: it paces itself to the agreed request budget, reuses recent answers,
-  and explains plainly when a limit or missing key gets in the way.
+- Polite to the data service: it adapts its pacing to your account's tier (`30`, `60`, or `120`
+  requests/minute), reuses recent answers, and explains plainly when a limit, subscription ceiling,
+  or missing key gets in the way.
 - Installs with one command on macOS, Linux and Windows, without any companion service, database or
   background process. Bun is the only prerequisite.
 

@@ -2,6 +2,7 @@
 // byte for byte, including the wire quirks and the encoding rules.
 
 import { describe, expect, test } from "bun:test";
+import { z } from "zod";
 
 import { TOOLS } from "../src/server.ts";
 import { urlOf } from "../src/target.ts";
@@ -13,7 +14,14 @@ import {
   type UrlCase,
 } from "./parity.fixtures.ts";
 
-const builders = new Map(TOOLS.map((tool) => [tool.name as string, tool.build]));
+const builders = new Map(
+  TOOLS.flatMap((tool) => (tool.build === undefined ? [] : [[tool.name as string, tool.build]])),
+);
+const schemas = new Map(
+  TOOLS.flatMap((tool) =>
+    tool.schema === undefined ? [] : [[tool.name as string, z.object(tool.schema)]],
+  ),
+);
 
 function urlFor(entry: UrlCase): string {
   const build = builders.get(entry.tool);
@@ -49,9 +57,10 @@ describe("target builders", () => {
     expect(parsed.search).toBe("?q=thunder+fury%26x");
   });
 
-  test("covers every parameter with a fixture route", () => {
+  test("covers every API-backed tool with a fixture route", () => {
     const destinations = new Set(URL_CASES.map((entry) => `${entry.tool}${entry.url}`));
     for (const tool of TOOLS) {
+      if (tool.name === "fdb_credit") continue;
       const covered = [...destinations].some((entry) => entry.startsWith(tool.name));
       expect(covered, `${tool.name} has no route fixture`).toBe(true);
     }
@@ -62,5 +71,20 @@ describe("target builders", () => {
       const names = tool.schema === undefined ? [] : Object.keys(tool.schema);
       expect(names, tool.name).toEqual(TOOL_PARAMETERS[tool.name] ?? []);
     }
+  });
+
+  test("rejects invalid closed enums and out-of-range numbers before network call", () => {
+    expect(() => schemas.get("fdb_bis")?.parse({ spec: "mage-fire", side: "alliance" })).toThrow();
+    expect(() => schemas.get("fdb_bis")?.parse({ spec: "mage-fire", mode: "arena" })).toThrow();
+    expect(() => schemas.get("fdb_bis")?.parse({ spec: "mage-fire", level: 0 })).toThrow();
+    expect(() => schemas.get("fdb_bis")?.parse({ spec: "mage-fire", level: 61 })).toThrow();
+    expect(() => schemas.get("fdb_items")?.parse({ limit: 0 })).toThrow();
+    expect(() => schemas.get("fdb_items")?.parse({ limit: 101 })).toThrow();
+    expect(() => schemas.get("fdb_items")?.parse({ quality: 6 })).toThrow();
+    expect(() => schemas.get("fdb_builds")?.parse({ build: "latest", type: "quest" })).toThrow();
+    expect(() =>
+      schemas.get("fdb_builds")?.parse({ build: "latest", change: "modified" }),
+    ).toThrow();
+    expect(() => schemas.get("fdb_buffs_nerfs")?.parse({ direction: "rework" })).toThrow();
   });
 });

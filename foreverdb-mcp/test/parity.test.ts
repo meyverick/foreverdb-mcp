@@ -1,6 +1,5 @@
-// Guards the port: the snapshot in `parity.fixtures.ts` is the contract the
-// TypeScript rewrite must reproduce. A drift here means either the port changed
-// behavior or someone edited the snapshot instead of re-taking it.
+// Guards the v1 contract: the snapshot in `parity.fixtures.ts` seals the
+// 22-tool surface, wire URLs, and error classification table.
 
 import { describe, expect, test } from "bun:test";
 
@@ -15,28 +14,35 @@ import {
   URL_CASES,
 } from "./parity.fixtures";
 
-describe("parity snapshot", () => {
+describe("contract snapshot", () => {
   test("snapshot is unchanged since it was taken", () => {
     expect(fixtureDigest()).toBe(FIXTURE_DIGEST);
   });
 
-  test("describes exactly the fifteen domain tools", () => {
+  test("describes exactly the twenty-two read-only tools", () => {
     expect(Object.keys(TOOL_DESCRIPTIONS).sort()).toEqual([
       "fdb_battlegrounds",
+      "fdb_bis",
+      "fdb_buffs_nerfs",
+      "fdb_builds",
       "fdb_changes",
       "fdb_classes",
       "fdb_content",
+      "fdb_credit",
       "fdb_disenchant",
       "fdb_dungeons",
+      "fdb_endgame",
       "fdb_gathering",
       "fdb_items",
       "fdb_itemsets",
+      "fdb_merchants_favor",
       "fdb_meta",
       "fdb_poisons",
       "fdb_professions",
       "fdb_quests",
       "fdb_spells",
       "fdb_vendors",
+      "fdb_zones",
     ]);
     expect(Object.keys(TOOL_PARAMETERS).sort()).toEqual(Object.keys(TOOL_DESCRIPTIONS).sort());
   });
@@ -48,9 +54,10 @@ describe("parity snapshot", () => {
     expect(SERVER_NAME).toBe("foreverdb");
   });
 
-  test("every tool has at least one wire case", () => {
+  test("every API-backed tool has at least one wire case", () => {
     const covered = new Set(URL_CASES.map((entry) => entry.tool));
     for (const tool of Object.keys(TOOL_DESCRIPTIONS)) {
+      if (tool === "fdb_credit") continue;
       expect(covered, `${tool} has no URL case`).toContain(tool);
     }
     expect(ENCODING_CASES.length).toBeGreaterThan(0);
@@ -65,6 +72,7 @@ describe("parity snapshot", () => {
       "upstream_unavailable",
       "upstream_error",
       "rate_limit",
+      "subscription_required",
     ]) {
       expect(codes, `missing code ${code}`).toContain(code);
     }

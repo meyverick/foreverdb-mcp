@@ -4,10 +4,10 @@
 import { describe, expect, test } from "bun:test";
 
 import { TtlCache } from "../src/cache.ts";
-import { classify, codeOf, messageOf, type UpstreamFailure } from "../src/errors.ts";
-import { Semaphore } from "../src/limiter.ts";
+import { classify, codeOf, messageOf, statusOf, type UpstreamFailure } from "../src/errors.ts";
+import { Semaphore, TokenBucket } from "../src/limiter.ts";
 import { targetPath } from "../src/target.ts";
-import { Upstream } from "../src/upstream.ts";
+import { DEFAULT_BASE_URL, isFreeTier, Upstream, USER_AGENT } from "../src/upstream.ts";
 import { ERROR_CASES } from "./parity.fixtures.ts";
 
 function virtualClock(start = 0) {
@@ -46,14 +46,18 @@ function scriptedFetch(replies: Reply[]) {
 }
 
 describe("key handling", () => {
-  test("sends the key and makes no request without one", async () => {
+  test("sends the key and User-Agent, defaults to api.foreverdb.net, and makes no request without a key", async () => {
+    expect(DEFAULT_BASE_URL).toBe("https://api.foreverdb.net/api/v1");
+    expect(USER_AGENT).toContain("foreverdb-mcp/");
+
     let hits = 0;
-    const observed = { key: null as string | null };
+    const observed = { key: null as string | null, ua: null as string | null };
     const stub = Bun.serve({
       port: 0,
       fetch(request) {
         hits += 1;
         observed.key = request.headers.get("X-API-Key");
+        observed.ua = request.headers.get("User-Agent");
         return Response.json({ data: [], meta: {} });
       },
     });
@@ -63,6 +67,7 @@ describe("key handling", () => {
       await keyed.get(targetPath("meta"));
       expect(hits).toBe(1);
       expect(observed.key).toBe("fdb_test_key");
+      expect(observed.ua).toBe(USER_AGENT);
 
       for (const apiKey of [undefined, "", "   "]) {
         const keyless = new Upstream({ baseUrl: base, apiKey });
@@ -113,6 +118,81 @@ describe("rate budget", () => {
       const inWindow = sentAt.filter((time) => time >= from && time < from + 60_000);
       expect(inWindow.length, `window at ${from}`).toBeLessThanOrEqual(60);
     }
+  });
+
+  test("paces a default Upstream burst to at most 30 per rolling minute before any tier header", async () => {
+    const clock = virtualClock();
+    const { impl } = scriptedFetch([{ status: 200, body: "{}" }]);
+    const upstream = new Upstream(
+      { baseUrl: "https://api.foreverdb.net/api/v1", apiKey: "k" },
+      { fetch: impl, sleep: clock.sleep, now: clock.now },
+    );
+
+    const sentAt: number[] = [];
+    for (let index = 0; index < 60; index += 1) {
+      await upstream.get(targetPath("items", String(index)));
+      sentAt.push(clock.time);
+    }
+
+    expect(sentAt[0]).toBe(0);
+    expect(sentAt[1]).toBe(2000);
+    expect(sentAt[29]).toBe(58_000);
+    expect(sentAt[59]).toBe(118_000);
+
+    for (let start = 0; start < sentAt.length; start += 1) {
+      const from = sentAt[start] as number;
+      const inWindow = sentAt.filter((time) => time >= from && time < from + 60_000);
+      expect(inWindow.length, `window at ${from}`).toBeLessThanOrEqual(30);
+    }
+  });
+
+  test("TokenBucket starts at 30/min and adapts dynamically to 60/min and 120/min", async () => {
+    const clock = virtualClock();
+    const bucket = new TokenBucket({
+      refillPerMs: 30 / 60_000,
+      sleep: clock.sleep,
+      now: clock.now,
+    });
+
+    await bucket.take();
+    expect(clock.time).toBe(0);
+
+    // At 30/min, the next token takes 2000ms.
+    await bucket.take();
+    expect(clock.time).toBe(2000);
+
+    // Adapt up to 60/min -> 1000ms per token.
+    bucket.setRate(60 / 60_000);
+    await bucket.take();
+    expect(clock.time).toBe(3000);
+
+    // Adapt up to 120/min -> 500ms per token.
+    bucket.setRate(120 / 60_000);
+    await bucket.take();
+    expect(clock.time).toBe(3500);
+    await bucket.take();
+    expect(clock.time).toBe(4000);
+  });
+
+  test("Upstream adapts rate from X-RateLimit-Limit header without restart", async () => {
+    const clock = virtualClock();
+    const impl = (async () =>
+      new Response('{"data":{},"meta":{}}', {
+        status: 200,
+        headers: { "X-RateLimit-Limit": "120" },
+      })) as unknown as typeof fetch;
+
+    const upstream = new Upstream(
+      { baseUrl: "https://api.foreverdb.net/api/v1", apiKey: "k" },
+      { fetch: impl, sleep: clock.sleep, now: clock.now },
+    );
+
+    await upstream.get(targetPath("items", "1"));
+    expect(clock.time).toBe(0);
+    await upstream.get(targetPath("items", "2"));
+    expect(clock.time).toBe(500);
+    await upstream.get(targetPath("items", "3"));
+    expect(clock.time).toBe(1000);
   });
 });
 
@@ -241,6 +321,92 @@ describe("retry and classification", () => {
     expect(codeOf(failure as UpstreamFailure)).toBe("upstream_unavailable");
     expect(messageOf(failure as UpstreamFailure)).toBe("The ForeverDB API answered HTTP 500.");
   });
+
+  test("fails fast on 429 with long Retry-After without sleeping or retrying", async () => {
+    const clock = virtualClock();
+    const { impl, calls } = scriptedFetch([
+      {
+        status: 429,
+        retryAfter: "3600",
+        body: '{"error":{"code":"rate_limit","message":"Daily limit reached."}}',
+      },
+    ]);
+    const upstream = new Upstream(
+      { baseUrl: "https://x.test/api/v1", apiKey: "k" },
+      { fetch: impl, sleep: clock.sleep, now: clock.now },
+    );
+    const failure = await upstream.get(targetPath("meta")).catch((error) => error);
+    expect(calls.length).toBe(1);
+    expect(clock.time).toBe(0);
+    expect(codeOf(failure as UpstreamFailure)).toBe("rate_limit");
+    expect(statusOf(failure as UpstreamFailure)).toBe(429);
+  });
+
+  test("ignores a negative Retry-After header without passing a negative sleep delay", async () => {
+    const slept: number[] = [];
+    const { impl, calls } = scriptedFetch([
+      { status: 429, retryAfter: "-5", body: "slow down" },
+      { status: 200, body: '{"data":[]}' },
+    ]);
+    const upstream = new Upstream(
+      { baseUrl: "https://x.test/api/v1", apiKey: "k" },
+      {
+        fetch: impl,
+        sleep: async (ms) => {
+          slept.push(ms);
+        },
+      },
+    );
+    const fetched = await upstream.get(targetPath("meta"));
+    expect(calls.length).toBe(2);
+    expect(slept).toEqual([]);
+    expect(fetched.body).toBe('{"data":[]}');
+  });
+
+  test("maps HTTP 402 subscription_required without retry", async () => {
+    const { impl, calls } = scriptedFetch([
+      {
+        status: 402,
+        body: '{"error":{"code":"subscription_required","message":"Free tier daily limit reached."}}',
+      },
+    ]);
+    const upstream = new Upstream(
+      { baseUrl: "https://x.test/api/v1", apiKey: "k" },
+      { fetch: impl, sleep: async () => {} },
+    );
+    const failure = await upstream.get(targetPath("meta")).catch((error) => error);
+    expect(calls.length).toBe(1);
+    expect(codeOf(failure as UpstreamFailure)).toBe("subscription_required");
+    expect(messageOf(failure as UpstreamFailure)).toBe("Free tier daily limit reached.");
+    expect(statusOf(failure as UpstreamFailure)).toBe(402);
+  });
+});
+
+describe("tier detection", () => {
+  test("prefers meta.attributionRequired over X-RateLimit-Limit (grandfathered 60/min free keys)", async () => {
+    const impl = (async () =>
+      new Response('{"data":{},"meta":{"attributionRequired":true}}', {
+        status: 200,
+        headers: { "X-RateLimit-Limit": "60", "X-Api-Plan": "free" },
+      })) as unknown as typeof fetch;
+
+    const upstream = new Upstream(
+      { baseUrl: "https://x.test/api/v1", apiKey: "k" },
+      { fetch: impl },
+    );
+    await upstream.get(targetPath("meta"));
+    expect(isFreeTier(upstream.tier())).toBe(true);
+  });
+
+  test("resolves paid tier from attributionRequired=false, X-Api-Plan, or rateLimit > 30", () => {
+    expect(isFreeTier({ attributionRequired: false, rateLimit: 30 })).toBe(false);
+    expect(isFreeTier({ plan: "paid", rateLimit: 30 })).toBe(false);
+    expect(isFreeTier({ plan: "plus" })).toBe(false);
+    expect(isFreeTier({ plan: "free", rateLimit: 60 })).toBe(true);
+    expect(isFreeTier({ rateLimit: 60 })).toBe(false);
+    expect(isFreeTier({ rateLimit: 30 })).toBe(true);
+    expect(isFreeTier(undefined)).toBe(true);
+  });
 });
 
 describe("error table", () => {
@@ -249,6 +415,11 @@ describe("error table", () => {
       const failure = failureFor(entry);
       expect(codeOf(failure), `${entry.code} code`).toBe(entry.code);
       expect(messageOf(failure), `${entry.code} message`).toBe(entry.message);
+      if (entry.kind === "response") {
+        expect(statusOf(failure), `${entry.code} status`).toBe(entry.status);
+      } else {
+        expect(statusOf(failure), `${entry.code} status`).toBeUndefined();
+      }
     }
   });
 });
